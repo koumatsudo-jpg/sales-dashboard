@@ -1,0 +1,12 @@
+.env
+.venv/
+venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+credentials.json
+token.json
+.DS_Store
+# ローカル運用データ（共有しない）
+dismissals.yaml
+targets_override.yaml

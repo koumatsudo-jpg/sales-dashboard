@@ -1,0 +1,133 @@
+name: Sales Notifications
+
+on:
+  schedule:
+    # JST 23:00 = UTC 14:00 (毎日) — 当日の記入漏れチェック + データ不整合
+    - cron: "0 14 * * *"
+    # JST 9:00 = UTC 0:00 (毎日) — 前日記入漏れ再チェック + 停滞案件 + 日次サマリ
+    - cron: "0 0 * * *"
+    # JST 月 9:05 = UTC 月 0:05（週次サマリ・若干ずらして衝突回避）
+    - cron: "5 0 * * 1"
+  workflow_dispatch:
+    inputs:
+      job:
+        description: "実行するジョブ"
+        required: true
+        default: "missing_logs_check"
+        type: choice
+        options:
+          - missing_logs_check
+          - data_inconsistency_check
+          - stagnant_deals_check
+          - daily_summary
+          - weekly_summary
+
+jobs:
+  notify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Restore Google credentials
+        env:
+          GOOGLE_OAUTH_CREDENTIALS_JSON: ${{ secrets.GOOGLE_OAUTH_CREDENTIALS_JSON }}
+          GOOGLE_OAUTH_TOKEN_JSON: ${{ secrets.GOOGLE_OAUTH_TOKEN_JSON }}
+        run: |
+          mkdir -p $HOME/.config/sales-dashboard
+          printf '%s' "$GOOGLE_OAUTH_CREDENTIALS_JSON" > $HOME/.config/sales-dashboard/credentials.json
+          printf '%s' "$GOOGLE_OAUTH_TOKEN_JSON"       > $HOME/.config/sales-dashboard/token.json
+
+      - name: Render .env from secrets
+        env:
+          SHEET_ID_OWNER: ${{ secrets.SHEET_ID_OWNER }}
+          SHEET_ID_SUBORDINATE: ${{ secrets.SHEET_ID_SUBORDINATE }}
+          CALENDAR_ID_OWNER: ${{ secrets.CALENDAR_ID_OWNER }}
+          CALENDAR_ID_SUBORDINATE: ${{ secrets.CALENDAR_ID_SUBORDINATE }}
+          OWNER_NAME: ${{ secrets.OWNER_NAME }}
+          SUBORDINATE_NAME: ${{ secrets.SUBORDINATE_NAME }}
+          ACTIVITY_KEYWORDS: ${{ secrets.ACTIVITY_KEYWORDS }}
+          ACTIVITY_SHEET_NAME: ${{ secrets.ACTIVITY_SHEET_NAME }}
+          DEAL_SHEET_NAME: ${{ secrets.DEAL_SHEET_NAME }}
+          COL_DATE: ${{ secrets.COL_DATE }}
+          COL_CUSTOMER: ${{ secrets.COL_CUSTOMER }}
+          COL_OWNER: ${{ secrets.COL_OWNER }}
+          COL_STAGE: ${{ secrets.COL_STAGE }}
+          COL_AMOUNT: ${{ secrets.COL_AMOUNT }}
+          COL_NEXT_ACTION_DATE: ${{ secrets.COL_NEXT_ACTION_DATE }}
+          COL_LAST_CONTACT_DATE: ${{ secrets.COL_LAST_CONTACT_DATE }}
+          LINE_CHANNEL_ACCESS_TOKEN: ${{ secrets.LINE_CHANNEL_ACCESS_TOKEN }}
+          LINE_GROUP_ID: ${{ secrets.LINE_GROUP_ID }}
+          LINE_USER_ID_OWNER: ${{ secrets.LINE_USER_ID_OWNER }}
+          LINE_USER_ID_SUBORDINATE: ${{ secrets.LINE_USER_ID_SUBORDINATE }}
+          NOTIFY_EMAIL_TO: ${{ secrets.NOTIFY_EMAIL_TO }}
+          SMTP_HOST: ${{ secrets.SMTP_HOST }}
+          SMTP_PORT: ${{ secrets.SMTP_PORT }}
+          SMTP_USER: ${{ secrets.SMTP_USER }}
+          SMTP_PASSWORD: ${{ secrets.SMTP_PASSWORD }}
+          STAGNANT_DAYS_THRESHOLD: ${{ secrets.STAGNANT_DAYS_THRESHOLD }}
+          TIMEZONE: ${{ secrets.TIMEZONE }}
+          GOOGLE_OAUTH_CREDENTIALS: $HOME/.config/sales-dashboard/credentials.json
+          GOOGLE_OAUTH_TOKEN: $HOME/.config/sales-dashboard/token.json
+        run: |
+          envsubst < .env.example > .env || cp .env.example .env
+          # シンプルに env vars を .env に書き戻す（envsubst が無くてもOK）
+          {
+            echo "GOOGLE_OAUTH_CREDENTIALS=$HOME/.config/sales-dashboard/credentials.json"
+            echo "GOOGLE_OAUTH_TOKEN=$HOME/.config/sales-dashboard/token.json"
+            echo "SHEET_ID_OWNER=$SHEET_ID_OWNER"
+            echo "SHEET_ID_SUBORDINATE=$SHEET_ID_SUBORDINATE"
+            echo "CALENDAR_ID_OWNER=$CALENDAR_ID_OWNER"
+            echo "CALENDAR_ID_SUBORDINATE=$CALENDAR_ID_SUBORDINATE"
+            echo "OWNER_NAME=$OWNER_NAME"
+            echo "SUBORDINATE_NAME=$SUBORDINATE_NAME"
+            echo "ACTIVITY_KEYWORDS=$ACTIVITY_KEYWORDS"
+            echo "ACTIVITY_SHEET_NAME=$ACTIVITY_SHEET_NAME"
+            echo "DEAL_SHEET_NAME=$DEAL_SHEET_NAME"
+            echo "COL_DATE=$COL_DATE"
+            echo "COL_CUSTOMER=$COL_CUSTOMER"
+            echo "COL_OWNER=$COL_OWNER"
+            echo "COL_STAGE=$COL_STAGE"
+            echo "COL_AMOUNT=$COL_AMOUNT"
+            echo "COL_NEXT_ACTION_DATE=$COL_NEXT_ACTION_DATE"
+            echo "COL_LAST_CONTACT_DATE=$COL_LAST_CONTACT_DATE"
+            echo "LINE_CHANNEL_ACCESS_TOKEN=$LINE_CHANNEL_ACCESS_TOKEN"
+            echo "LINE_GROUP_ID=$LINE_GROUP_ID"
+            echo "LINE_USER_ID_OWNER=$LINE_USER_ID_OWNER"
+            echo "LINE_USER_ID_SUBORDINATE=$LINE_USER_ID_SUBORDINATE"
+            echo "NOTIFY_EMAIL_TO=$NOTIFY_EMAIL_TO"
+            echo "SMTP_HOST=$SMTP_HOST"
+            echo "SMTP_PORT=$SMTP_PORT"
+            echo "SMTP_USER=$SMTP_USER"
+            echo "SMTP_PASSWORD=$SMTP_PASSWORD"
+            echo "STAGNANT_DAYS_THRESHOLD=$STAGNANT_DAYS_THRESHOLD"
+            echo "TIMEZONE=${TIMEZONE:-Asia/Tokyo}"
+          } > .env
+
+      - name: Run job (scheduled - daily 23:00 JST - missing logs + data inconsistency)
+        if: github.event_name == 'schedule' && github.event.schedule == '0 14 * * *'
+        run: |
+          python jobs/missing_logs_check.py
+          python jobs/data_inconsistency_check.py
+
+      - name: Run job (scheduled - daily 9:00 JST - yesterday recheck + stagnant + summary)
+        if: github.event_name == 'schedule' && github.event.schedule == '0 0 * * *'
+        run: |
+          python jobs/missing_logs_check.py yesterday
+          python jobs/stagnant_deals_check.py
+          python jobs/daily_summary.py
+
+      - name: Run job (scheduled - weekly Mon 9:05 JST)
+        if: github.event_name == 'schedule' && github.event.schedule == '5 0 * * 1'
+        run: python jobs/weekly_summary.py
+
+      - name: Run job (manual)
+        if: github.event_name == 'workflow_dispatch'
+        run: python jobs/${{ github.event.inputs.job }}.py

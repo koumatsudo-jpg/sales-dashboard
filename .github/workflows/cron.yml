@@ -21,6 +21,7 @@ on:
           - stagnant_deals_check
           - daily_summary
           - weekly_summary
+          - test_line
 
 jobs:
   notify:
@@ -45,71 +46,17 @@ jobs:
           printf '%s' "$GOOGLE_OAUTH_CREDENTIALS_JSON" > $HOME/.config/sales-dashboard/credentials.json
           printf '%s' "$GOOGLE_OAUTH_TOKEN_JSON"       > $HOME/.config/sales-dashboard/token.json
 
-      - name: Render .env from secrets
+      - name: Render .env from DOTENV secret
         env:
-          SHEET_ID_OWNER: ${{ secrets.SHEET_ID_OWNER }}
-          SHEET_ID_SUBORDINATE: ${{ secrets.SHEET_ID_SUBORDINATE }}
-          CALENDAR_ID_OWNER: ${{ secrets.CALENDAR_ID_OWNER }}
-          CALENDAR_ID_SUBORDINATE: ${{ secrets.CALENDAR_ID_SUBORDINATE }}
-          OWNER_NAME: ${{ secrets.OWNER_NAME }}
-          SUBORDINATE_NAME: ${{ secrets.SUBORDINATE_NAME }}
-          ACTIVITY_KEYWORDS: ${{ secrets.ACTIVITY_KEYWORDS }}
-          ACTIVITY_SHEET_NAME: ${{ secrets.ACTIVITY_SHEET_NAME }}
-          DEAL_SHEET_NAME: ${{ secrets.DEAL_SHEET_NAME }}
-          COL_DATE: ${{ secrets.COL_DATE }}
-          COL_CUSTOMER: ${{ secrets.COL_CUSTOMER }}
-          COL_OWNER: ${{ secrets.COL_OWNER }}
-          COL_STAGE: ${{ secrets.COL_STAGE }}
-          COL_AMOUNT: ${{ secrets.COL_AMOUNT }}
-          COL_NEXT_ACTION_DATE: ${{ secrets.COL_NEXT_ACTION_DATE }}
-          COL_LAST_CONTACT_DATE: ${{ secrets.COL_LAST_CONTACT_DATE }}
-          LINE_CHANNEL_ACCESS_TOKEN: ${{ secrets.LINE_CHANNEL_ACCESS_TOKEN }}
-          LINE_GROUP_ID: ${{ secrets.LINE_GROUP_ID }}
-          LINE_USER_ID_OWNER: ${{ secrets.LINE_USER_ID_OWNER }}
-          LINE_USER_ID_SUBORDINATE: ${{ secrets.LINE_USER_ID_SUBORDINATE }}
-          NOTIFY_EMAIL_TO: ${{ secrets.NOTIFY_EMAIL_TO }}
-          SMTP_HOST: ${{ secrets.SMTP_HOST }}
-          SMTP_PORT: ${{ secrets.SMTP_PORT }}
-          SMTP_USER: ${{ secrets.SMTP_USER }}
-          SMTP_PASSWORD: ${{ secrets.SMTP_PASSWORD }}
-          STAGNANT_DAYS_THRESHOLD: ${{ secrets.STAGNANT_DAYS_THRESHOLD }}
-          TIMEZONE: ${{ secrets.TIMEZONE }}
-          GOOGLE_OAUTH_CREDENTIALS: $HOME/.config/sales-dashboard/credentials.json
-          GOOGLE_OAUTH_TOKEN: $HOME/.config/sales-dashboard/token.json
+          DOTENV: ${{ secrets.DOTENV }}
         run: |
-          envsubst < .env.example > .env || cp .env.example .env
-          # シンプルに env vars を .env に書き戻す（envsubst が無くてもOK）
+          printf '%s\n' "$DOTENV" > .env
+          # 認証ファイルパスを Actions ランナー用に上書き
           {
+            echo ""
             echo "GOOGLE_OAUTH_CREDENTIALS=$HOME/.config/sales-dashboard/credentials.json"
             echo "GOOGLE_OAUTH_TOKEN=$HOME/.config/sales-dashboard/token.json"
-            echo "SHEET_ID_OWNER=$SHEET_ID_OWNER"
-            echo "SHEET_ID_SUBORDINATE=$SHEET_ID_SUBORDINATE"
-            echo "CALENDAR_ID_OWNER=$CALENDAR_ID_OWNER"
-            echo "CALENDAR_ID_SUBORDINATE=$CALENDAR_ID_SUBORDINATE"
-            echo "OWNER_NAME=$OWNER_NAME"
-            echo "SUBORDINATE_NAME=$SUBORDINATE_NAME"
-            echo "ACTIVITY_KEYWORDS=$ACTIVITY_KEYWORDS"
-            echo "ACTIVITY_SHEET_NAME=$ACTIVITY_SHEET_NAME"
-            echo "DEAL_SHEET_NAME=$DEAL_SHEET_NAME"
-            echo "COL_DATE=$COL_DATE"
-            echo "COL_CUSTOMER=$COL_CUSTOMER"
-            echo "COL_OWNER=$COL_OWNER"
-            echo "COL_STAGE=$COL_STAGE"
-            echo "COL_AMOUNT=$COL_AMOUNT"
-            echo "COL_NEXT_ACTION_DATE=$COL_NEXT_ACTION_DATE"
-            echo "COL_LAST_CONTACT_DATE=$COL_LAST_CONTACT_DATE"
-            echo "LINE_CHANNEL_ACCESS_TOKEN=$LINE_CHANNEL_ACCESS_TOKEN"
-            echo "LINE_GROUP_ID=$LINE_GROUP_ID"
-            echo "LINE_USER_ID_OWNER=$LINE_USER_ID_OWNER"
-            echo "LINE_USER_ID_SUBORDINATE=$LINE_USER_ID_SUBORDINATE"
-            echo "NOTIFY_EMAIL_TO=$NOTIFY_EMAIL_TO"
-            echo "SMTP_HOST=$SMTP_HOST"
-            echo "SMTP_PORT=$SMTP_PORT"
-            echo "SMTP_USER=$SMTP_USER"
-            echo "SMTP_PASSWORD=$SMTP_PASSWORD"
-            echo "STAGNANT_DAYS_THRESHOLD=$STAGNANT_DAYS_THRESHOLD"
-            echo "TIMEZONE=${TIMEZONE:-Asia/Tokyo}"
-          } > .env
+          } >> .env
 
       - name: Run job (scheduled - daily 23:00 JST - missing logs + data inconsistency)
         if: github.event_name == 'schedule' && github.event.schedule == '0 14 * * *'

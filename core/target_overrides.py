@@ -1,42 +1,30 @@
-"""目標値のローカル上書き管理。
+"""目標値の上書き管理。Google Sheets に保存（ローカル⇄クラウド同期）。
 
-分析タブから読み込んだ目標値を、ローカルの YAML ファイルで上書きできる。
-ダッシュボードの「目標設定」タブから編集・保存。
+分析タブから読み込んだ目標値を、`_app_state` タブの target_overrides で上書きできる。
 """
 from __future__ import annotations
 
 from dataclasses import asdict, fields
-from pathlib import Path
 from typing import Any
 
-import yaml
-
+from .config import Config, load_config
+from .sheet_state import read_state, write_state_key
 from .targets import Targets
 
 
-DEFAULT_PATH = Path(__file__).resolve().parent.parent / "targets_override.yaml"
+def _config() -> Config:
+    return load_config()
 
 
-def load_overrides(path: Path | str | None = None) -> dict[str, dict[str, float]]:
+def load_overrides() -> dict[str, dict[str, float]]:
     """member_name -> {field: value} を返す。"""
-    p = Path(path) if path else DEFAULT_PATH
-    if not p.exists():
-        return {}
-    try:
-        data = yaml.safe_load(p.read_text(encoding="utf-8")) or {}
-    except yaml.YAMLError:
-        return {}
-    return data.get("overrides", {}) or {}
+    state = read_state(_config())
+    return state.get("target_overrides") or {}
 
 
-def save_overrides(overrides: dict[str, dict[str, float]], path: Path | str | None = None) -> None:
+def save_overrides(overrides: dict[str, dict[str, float]]) -> None:
     """上書き値を保存。"""
-    p = Path(path) if path else DEFAULT_PATH
-    p.parent.mkdir(parents=True, exist_ok=True)
-    p.write_text(
-        yaml.safe_dump({"overrides": overrides}, allow_unicode=True, sort_keys=False),
-        encoding="utf-8",
-    )
+    write_state_key(_config(), "target_overrides", overrides)
 
 
 def apply_overrides(targets: Targets, member_name: str, overrides: dict[str, dict[str, float]]) -> Targets:

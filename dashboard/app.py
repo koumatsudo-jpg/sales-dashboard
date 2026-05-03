@@ -8,6 +8,8 @@ Salesforce Lightning 配色 + ナラティブ構成:
 from __future__ import annotations
 
 import calendar
+import json
+import os
 import sys
 from datetime import date, datetime, timedelta
 from pathlib import Path
@@ -20,6 +22,33 @@ if str(ROOT) not in sys.path:
 import altair as alt
 import pandas as pd
 import streamlit as st
+
+
+# ──────────────────────────────────────────────
+# Streamlit Cloud secrets → os.environ ブリッジ
+# ローカルでは .env、クラウドでは st.secrets を使えるように両対応
+# ──────────────────────────────────────────────
+def _bridge_secrets() -> None:
+    try:
+        secrets = dict(st.secrets)  # ファイル無いと例外
+    except Exception:
+        return
+    for key, value in secrets.items():
+        if key in ("GOOGLE_OAUTH_CREDENTIALS_JSON", "GOOGLE_OAUTH_TOKEN_JSON"):
+            # JSON 内容を /tmp に書き出してパスを env に通す
+            target_dir = Path("/tmp/sales-dashboard")
+            target_dir.mkdir(parents=True, exist_ok=True)
+            filename = "credentials.json" if "CREDENTIALS" in key else "token.json"
+            path = target_dir / filename
+            content = value if isinstance(value, str) else json.dumps(dict(value))
+            path.write_text(content)
+            env_key = "GOOGLE_OAUTH_CREDENTIALS" if "CREDENTIALS" in key else "GOOGLE_OAUTH_TOKEN"
+            os.environ.setdefault(env_key, str(path))
+        elif isinstance(value, str):
+            os.environ.setdefault(key, value)
+
+
+_bridge_secrets()
 
 from core.aliases import AliasMap
 from core.analytics import aggregate_member, aggregate_team
@@ -78,6 +107,7 @@ st.set_page_config(page_title="SFA Dashboard", layout="wide", initial_sidebar_st
 config = load_config()
 tz = ZoneInfo(config.timezone)
 aliases = AliasMap.load(config.aliases_path)
+RO = config.read_only  # 閲覧専用モード（クラウドデプロイ時に True）
 
 
 # ──────────────────────────────────────────────
@@ -298,9 +328,15 @@ for m in config.members:
 # ──────────────────────────────────────────────
 # Tabs
 # ──────────────────────────────────────────────
-tab_warning, tab_progress, tab_individual, tab_team, tab_targets = st.tabs([
-    "⚠️ 警告", "📈 進捗推移", "👤 個人", "👥 チーム", "🎯 目標設定",
-])
+if RO:
+    tab_warning, tab_progress, tab_individual, tab_team = st.tabs([
+        "⚠️ 警告", "📈 進捗推移", "👤 個人", "👥 チーム",
+    ])
+    tab_targets = None
+else:
+    tab_warning, tab_progress, tab_individual, tab_team, tab_targets = st.tabs([
+        "⚠️ 警告", "📈 進捗推移", "👤 個人", "👥 チーム", "🎯 目標設定",
+    ])
 
 
 # ═════════════════════════════════════════════════════════
@@ -408,26 +444,30 @@ with tab_warning:
 
     st.markdown("### 📝 記入漏れアラート")
     if all_missing:
-        # data_editor で「削除」チェックボックスを足す
-        df_m = pd.DataFrame([{**{k: v for k, v in r.items() if not k.startswith("_")}, "削除": False, "_id": r["_id"]} for r in all_missing])
-        edited_m = st.data_editor(
-            df_m,
-            hide_index=True,
-            use_container_width=True,
-            column_config={
-                "削除": st.column_config.CheckboxColumn("削除", help="チェックして「削除を反映」を押すと非表示に"),
-                "_id": None,  # 非表示
-            },
-            key="missing_editor",
-        )
-        if st.button("🗑 チェックした記入漏れを削除", key="dismiss_missing_btn"):
-            ids_to_dismiss = edited_m[edited_m["削除"] == True]["_id"].tolist()
-            if ids_to_dismiss:
-                dismiss_missing(ids_to_dismiss)
-                st.success(f"✓ {len(ids_to_dismiss)}件を削除しました")
-                st.rerun()
-            else:
-                st.warning("削除対象が選択されていません")
+        if RO:
+            df_m = pd.DataFrame([{k: v for k, v in r.items() if not k.startswith("_")} for r in all_missing])
+            st.dataframe(df_m, hide_index=True, use_container_width=True)
+        else:
+            # data_editor で「削除」チェックボックスを足す
+            df_m = pd.DataFrame([{**{k: v for k, v in r.items() if not k.startswith("_")}, "削除": False, "_id": r["_id"]} for r in all_missing])
+            edited_m = st.data_editor(
+                df_m,
+                hide_index=True,
+                use_container_width=True,
+                column_config={
+                    "削除": st.column_config.CheckboxColumn("削除", help="チェックして「削除を反映」を押すと非表示に"),
+                    "_id": None,  # 非表示
+                },
+                key="missing_editor",
+            )
+            if st.button("🗑 チェックした記入漏れを削除", key="dismiss_missing_btn"):
+                ids_to_dismiss = edited_m[edited_m["削除"] == True]["_id"].tolist()
+                if ids_to_dismiss:
+                    dismiss_missing(ids_to_dismiss)
+                    st.success(f"✓ {len(ids_to_dismiss)}件を削除しました")
+                    st.rerun()
+                else:
+                    st.warning("削除対象が選択されていません")
     else:
         st.success("記入漏れはありません。")
 
@@ -447,63 +487,67 @@ with tab_warning:
 
     st.markdown(f"### ⏸ 停滞案件（{config.stagnant_days_threshold}日以上動きなし）")
     if all_stagnant:
-        df_s = pd.DataFrame([{**{k: v for k, v in r.items() if not k.startswith("_")}, "削除": False, "_id": r["_id"]} for r in all_stagnant])
-        edited_s = st.data_editor(
-            df_s,
-            hide_index=True,
-            use_container_width=True,
-            column_config={
-                "削除": st.column_config.CheckboxColumn("削除", help="チェックして「削除を反映」を押すと非表示に（シートのデータは残る）"),
-                "_id": None,
-            },
-            key="stagnant_editor",
-        )
-        cols_action = st.columns([1, 1, 3])
-        if cols_action[0].button("🗑 チェックした停滞案件を削除", key="dismiss_stagnant_btn"):
-            ids_to_dismiss = edited_s[edited_s["削除"] == True]["_id"].tolist()
-            if ids_to_dismiss:
-                dismiss_stagnant(ids_to_dismiss)
-                st.success(f"✓ {len(ids_to_dismiss)}件を削除しました")
-                st.rerun()
-            else:
-                st.warning("削除対象が選択されていません")
-
-        st.markdown("**ステージを変更してシートに書き戻し**")
-        STATUS_OPTIONS = ["長期追客", "失注", "クーリングオフ", "SP", "リスケ", "契約済"]
-        with st.form("change_status_form", clear_on_submit=True):
-            col1, col2 = st.columns([3, 2])
-            with col1:
-                target_idx = st.selectbox(
-                    "対象案件",
-                    options=list(range(len(all_stagnant))),
-                    format_func=lambda i: (
-                        f"{all_stagnant[i]['担当']} / {all_stagnant[i]['顧客']} "
-                        f"（{all_stagnant[i]['現況ステータス']}・最終{all_stagnant[i]['最終活動']}）"
-                    ),
-                )
-            with col2:
-                new_status = st.selectbox("新ステータス", STATUS_OPTIONS)
-            submitted = st.form_submit_button("反映（シートに書き戻し）")
-            if submitted:
-                target = all_stagnant[target_idx]
-                try:
-                    update_current_status(
-                        config,
-                        target["_sheet_id"],
-                        target["_sheet_tab"],
-                        int(target["_row_number"]),
-                        new_status,
-                    )
-                    st.success(f"✓ {target['顧客']}（{target['担当']}）を「{new_status}」に更新しました")
-                    st.cache_data.clear()
+        if RO:
+            df_s = pd.DataFrame([{k: v for k, v in r.items() if not k.startswith("_")} for r in all_stagnant])
+            st.dataframe(df_s, hide_index=True, use_container_width=True)
+        else:
+            df_s = pd.DataFrame([{**{k: v for k, v in r.items() if not k.startswith("_")}, "削除": False, "_id": r["_id"]} for r in all_stagnant])
+            edited_s = st.data_editor(
+                df_s,
+                hide_index=True,
+                use_container_width=True,
+                column_config={
+                    "削除": st.column_config.CheckboxColumn("削除", help="チェックして「削除を反映」を押すと非表示に（シートのデータは残る）"),
+                    "_id": None,
+                },
+                key="stagnant_editor",
+            )
+            cols_action = st.columns([1, 1, 3])
+            if cols_action[0].button("🗑 チェックした停滞案件を削除", key="dismiss_stagnant_btn"):
+                ids_to_dismiss = edited_s[edited_s["削除"] == True]["_id"].tolist()
+                if ids_to_dismiss:
+                    dismiss_stagnant(ids_to_dismiss)
+                    st.success(f"✓ {len(ids_to_dismiss)}件を削除しました")
                     st.rerun()
-                except Exception as e:
-                    st.error(f"更新失敗: {e}")
+                else:
+                    st.warning("削除対象が選択されていません")
+
+            st.markdown("**ステージを変更してシートに書き戻し**")
+            STATUS_OPTIONS = ["長期追客", "失注", "クーリングオフ", "SP", "リスケ", "契約済"]
+            with st.form("change_status_form", clear_on_submit=True):
+                col1, col2 = st.columns([3, 2])
+                with col1:
+                    target_idx = st.selectbox(
+                        "対象案件",
+                        options=list(range(len(all_stagnant))),
+                        format_func=lambda i: (
+                            f"{all_stagnant[i]['担当']} / {all_stagnant[i]['顧客']} "
+                            f"（{all_stagnant[i]['現況ステータス']}・最終{all_stagnant[i]['最終活動']}）"
+                        ),
+                    )
+                with col2:
+                    new_status = st.selectbox("新ステータス", STATUS_OPTIONS)
+                submitted = st.form_submit_button("反映（シートに書き戻し）")
+                if submitted:
+                    target = all_stagnant[target_idx]
+                    try:
+                        update_current_status(
+                            config,
+                            target["_sheet_id"],
+                            target["_sheet_tab"],
+                            int(target["_row_number"]),
+                            new_status,
+                        )
+                        st.success(f"✓ {target['顧客']}（{target['担当']}）を「{new_status}」に更新しました")
+                        st.cache_data.clear()
+                        st.rerun()
+                    except Exception as e:
+                        st.error(f"更新失敗: {e}")
     else:
         st.success("停滞案件はありません。")
 
-    # 削除済みの復活
-    if dismissed_missing or dismissed_stagnant:
+    # 削除済みの復活（編集可能モードのみ）
+    if not RO and (dismissed_missing or dismissed_stagnant):
         with st.expander(f"🔁 削除済みアラート ({len(dismissed_missing)} 記入漏れ / {len(dismissed_stagnant)} 停滞案件)"):
             if dismissed_missing:
                 st.markdown("**削除済み記入漏れ**")
@@ -949,7 +993,8 @@ with tab_team:
 # ═════════════════════════════════════════════════════════
 # Tab 5 · 目標設定（ローカル上書き）
 # ═════════════════════════════════════════════════════════
-with tab_targets:
+if tab_targets is not None:
+  with tab_targets:
     st.markdown("### 🎯 目標設定")
     st.caption(
         "分析タブから読み込んだ目標値が表示されます。"

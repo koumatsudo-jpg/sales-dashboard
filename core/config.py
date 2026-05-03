@@ -102,6 +102,8 @@ class Config:
     stagnant_days_threshold: int
     timezone: str
 
+    read_only: bool
+
     members: list[Member]
 
 
@@ -171,5 +173,6 @@ def load_config() -> Config:
         notification_hour=_get_int("NOTIFICATION_HOUR", 9),
         stagnant_days_threshold=_get_int("STAGNANT_DAYS_THRESHOLD", 7),
         timezone=_get("TIMEZONE", "Asia/Tokyo"),
+        read_only=_get("READ_ONLY", "").lower() in ("1", "true", "yes", "on"),
         members=members,
     )

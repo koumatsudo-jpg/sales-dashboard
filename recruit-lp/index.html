@@ -1,0 +1,910 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>あなたの志望企業、内定率は何%?|30秒で就活力診断</title>
+<meta name="description" content="10個の質問に答えるだけ。あなたの志望企業への内定率をシミュレーション診断。今の就活力と、内定率を上げるための次の一歩がわかります。">
+<meta property="og:title" content="あなたの志望企業、内定率は何%?">
+<meta property="og:description" content="30秒でわかる就活力診断。志望企業への内定率をシミュレーションしてみよう。">
+<meta property="og:type" content="website">
+<style>
+  :root {
+    --brand: #4f46e5;
+    --brand-dark: #3730a3;
+    --brand-light: #eef2ff;
+    --ink: #1f2430;
+    --ink-2: #4b5563;
+    --ink-3: #8b93a3;
+    --surface: #ffffff;
+    --bg: #f4f5f9;
+    --line: #e5e7eb;
+    --track: #e8eaf1;
+    --radius: 16px;
+    --shadow: 0 8px 30px rgba(31, 36, 48, .08);
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    font-family: "Hiragino Kaku Gothic ProN", "Hiragino Sans", "Noto Sans JP", "Yu Gothic", Meiryo, system-ui, sans-serif;
+    background: var(--bg);
+    color: var(--ink);
+    line-height: 1.7;
+  }
+  .wrap { max-width: 560px; margin: 0 auto; padding: 0 20px; }
+  .hidden { display: none !important; }
+
+  /* ---------- ヒーロー ---------- */
+  .hero {
+    background: linear-gradient(150deg, #312e81 0%, #4f46e5 55%, #7c6cf0 100%);
+    color: #fff;
+    padding: 56px 0 72px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+  }
+  .hero::after {
+    content: "";
+    position: absolute; inset: auto 0 -1px 0; height: 40px;
+    background: var(--bg);
+    border-radius: 100% 100% 0 0 / 40px 40px 0 0;
+  }
+  .hero .badge {
+    display: inline-block;
+    background: rgba(255,255,255,.16);
+    border: 1px solid rgba(255,255,255,.35);
+    border-radius: 999px;
+    padding: 4px 16px;
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: .06em;
+    margin-bottom: 18px;
+  }
+  .hero h1 {
+    font-size: 27px;
+    font-weight: 800;
+    line-height: 1.45;
+    letter-spacing: .01em;
+  }
+  .hero h1 .pct { font-size: 1.35em; color: #ffe27a; }
+  .hero p.lead {
+    margin-top: 14px;
+    font-size: 14.5px;
+    opacity: .92;
+  }
+  .hero .meta {
+    margin-top: 18px;
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    font-size: 12.5px;
+  }
+  .hero .meta span {
+    background: rgba(255,255,255,.14);
+    border-radius: 8px;
+    padding: 5px 12px;
+  }
+
+  /* ---------- ボタン ---------- */
+  .btn {
+    display: block;
+    width: 100%;
+    border: none;
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 17px;
+    font-weight: 800;
+    padding: 17px 24px;
+    border-radius: 14px;
+    text-align: center;
+    text-decoration: none;
+    transition: transform .12s ease, box-shadow .12s ease, background .12s ease;
+  }
+  .btn-primary {
+    background: linear-gradient(135deg, #f59e0b, #f97316);
+    color: #fff;
+    box-shadow: 0 8px 22px rgba(249, 115, 22, .38);
+  }
+  .btn-primary:active { transform: scale(.98); }
+  .btn-brand {
+    background: var(--brand);
+    color: #fff;
+    box-shadow: 0 8px 22px rgba(79, 70, 229, .32);
+  }
+  .btn-brand:disabled { background: #b9bdd6; box-shadow: none; cursor: not-allowed; }
+  .btn-sub {
+    background: transparent;
+    color: var(--ink-3);
+    font-size: 14px;
+    font-weight: 600;
+    padding: 10px;
+  }
+
+  .card {
+    background: var(--surface);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    padding: 26px 22px;
+  }
+
+  /* ---------- スタート画面 ---------- */
+  #screen-start { padding-bottom: 56px; }
+  .start-card { margin-top: -34px; position: relative; z-index: 2; }
+  .start-card ul { list-style: none; margin: 4px 0 20px; }
+  .start-card li {
+    padding: 9px 0 9px 30px;
+    position: relative;
+    font-size: 14.5px;
+    color: var(--ink-2);
+    border-bottom: 1px dashed var(--line);
+  }
+  .start-card li:last-child { border-bottom: none; }
+  .start-card li::before {
+    content: "✓";
+    position: absolute; left: 2px; top: 9px;
+    width: 20px; height: 20px;
+    background: var(--brand-light);
+    color: var(--brand);
+    border-radius: 50%;
+    font-size: 12px; font-weight: 800;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .note {
+    margin-top: 14px;
+    font-size: 11.5px;
+    color: var(--ink-3);
+    line-height: 1.6;
+  }
+
+  /* ---------- 質問画面 ---------- */
+  #screen-quiz { padding: 28px 0 56px; }
+  .progress-row {
+    display: flex; align-items: center; gap: 12px;
+    margin-bottom: 18px;
+  }
+  .progress-label { font-size: 13px; font-weight: 700; color: var(--brand); white-space: nowrap; }
+  .progress-track {
+    flex: 1; height: 8px;
+    background: var(--track);
+    border-radius: 999px;
+    overflow: hidden;
+  }
+  .progress-fill {
+    height: 100%;
+    width: 0%;
+    background: linear-gradient(90deg, var(--brand), #7c6cf0);
+    border-radius: 999px;
+    transition: width .3s ease;
+  }
+  .q-title {
+    font-size: 19px;
+    font-weight: 800;
+    margin-bottom: 18px;
+    line-height: 1.5;
+  }
+  .opt {
+    display: block;
+    width: 100%;
+    text-align: left;
+    font-family: inherit;
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--ink);
+    background: var(--surface);
+    border: 2px solid var(--line);
+    border-radius: 12px;
+    padding: 15px 16px;
+    margin-bottom: 10px;
+    cursor: pointer;
+    transition: border-color .12s, background .12s, transform .12s;
+  }
+  .opt:active { transform: scale(.985); }
+  .opt.selected { border-color: var(--brand); background: var(--brand-light); }
+
+  /* ---------- フォーム ---------- */
+  #screen-form { padding: 28px 0 56px; }
+  .form-head { text-align: center; margin-bottom: 18px; }
+  .form-head .done-badge {
+    display: inline-block;
+    background: #ecfdf5; color: #047857;
+    font-size: 12.5px; font-weight: 800;
+    border-radius: 999px; padding: 4px 14px;
+    margin-bottom: 10px;
+  }
+  .form-head h2 { font-size: 20px; font-weight: 800; line-height: 1.5; }
+  .form-head p { font-size: 13px; color: var(--ink-2); margin-top: 6px; }
+  .field { margin-bottom: 16px; }
+  .field label {
+    display: block;
+    font-size: 13.5px;
+    font-weight: 700;
+    margin-bottom: 6px;
+  }
+  .req, .optional {
+    font-size: 10.5px;
+    border-radius: 4px;
+    padding: 1px 6px;
+    margin-left: 6px;
+    vertical-align: 1px;
+  }
+  .req { background: #fef2f2; color: #dc2626; }
+  .optional { background: #f3f4f6; color: var(--ink-3); }
+  .field input[type="text"], .field input[type="email"], .field input[type="tel"], .field select {
+    width: 100%;
+    font-family: inherit;
+    font-size: 16px;
+    padding: 13px 14px;
+    border: 1.5px solid var(--line);
+    border-radius: 10px;
+    background: #fff;
+    color: var(--ink);
+  }
+  .field input:focus, .field select:focus {
+    outline: none;
+    border-color: var(--brand);
+    box-shadow: 0 0 0 3px rgba(79,70,229,.14);
+  }
+  .consent {
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+    font-size: 12.5px;
+    color: var(--ink-2);
+    background: #f8f9fc;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 12px;
+    margin: 18px 0;
+  }
+  .consent input { margin-top: 3px; width: 18px; height: 18px; accent-color: var(--brand); flex-shrink: 0; }
+  .form-error {
+    display: none;
+    background: #fef2f2;
+    color: #b91c1c;
+    font-size: 13px;
+    font-weight: 600;
+    border-radius: 10px;
+    padding: 10px 14px;
+    margin-bottom: 14px;
+  }
+  .hp-field { position: absolute; left: -9999px; top: -9999px; }
+
+  /* ---------- 結果画面 ---------- */
+  #screen-result { padding: 28px 0 64px; }
+  .gauge-wrap { text-align: center; padding-top: 6px; }
+  .gauge-wrap .gauge-caption { font-size: 13.5px; font-weight: 700; color: var(--ink-2); }
+  .gauge-wrap .gauge-company {
+    font-size: 15px; font-weight: 800; color: var(--ink);
+    margin-bottom: 8px;
+    overflow-wrap: anywhere;
+  }
+  .gauge { position: relative; width: 210px; height: 210px; margin: 8px auto 4px; }
+  .gauge svg { transform: rotate(-90deg); }
+  .gauge .num {
+    position: absolute; inset: 0;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+  }
+  .gauge .num .value {
+    font-size: 56px;
+    font-weight: 800;
+    letter-spacing: -.02em;
+    color: var(--ink);
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+  }
+  .gauge .num .value small { font-size: 26px; font-weight: 800; margin-left: 2px; }
+  .tier-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    border-radius: 999px;
+    padding: 6px 18px;
+    font-size: 14px;
+    font-weight: 800;
+    margin-top: 4px;
+  }
+  .result-comment {
+    font-size: 14px;
+    color: var(--ink-2);
+    margin-top: 14px;
+    text-align: left;
+  }
+  .advice-card { margin-top: 18px; }
+  .advice-card h3 {
+    font-size: 16px;
+    font-weight: 800;
+    margin-bottom: 12px;
+    padding-left: 10px;
+    border-left: 4px solid var(--brand);
+  }
+  .advice-item {
+    background: #f8f9fc;
+    border-radius: 12px;
+    padding: 14px 16px;
+    margin-bottom: 10px;
+  }
+  .advice-item .a-title { font-size: 14px; font-weight: 800; color: var(--brand-dark); margin-bottom: 4px; }
+  .advice-item .a-body { font-size: 13.5px; color: var(--ink-2); }
+  .cta-card {
+    margin-top: 22px;
+    background: linear-gradient(150deg, #312e81, #4f46e5);
+    color: #fff;
+    border-radius: var(--radius);
+    padding: 26px 22px;
+    text-align: center;
+  }
+  .cta-card h3 { font-size: 19px; font-weight: 800; line-height: 1.5; }
+  .cta-card p { font-size: 13.5px; opacity: .92; margin: 10px 0 18px; }
+  .share-row { margin-top: 18px; text-align: center; }
+  .share-row a {
+    display: inline-block;
+    background: var(--ink);
+    color: #fff;
+    font-size: 13.5px;
+    font-weight: 700;
+    text-decoration: none;
+    border-radius: 999px;
+    padding: 10px 22px;
+  }
+  .disclaimer {
+    margin-top: 22px;
+    font-size: 11px;
+    color: var(--ink-3);
+    line-height: 1.7;
+  }
+
+  /* ---------- プライバシー / フッター ---------- */
+  footer {
+    background: #23263a;
+    color: #aab0c4;
+    padding: 32px 0 40px;
+    font-size: 12px;
+  }
+  footer h4 { color: #fff; font-size: 13px; margin-bottom: 10px; }
+  footer .privacy-box { line-height: 1.8; }
+  footer .copy { margin-top: 22px; text-align: center; opacity: .7; }
+
+  @media (min-width: 600px) {
+    .hero h1 { font-size: 32px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ================= 設定 =================
+  公開前に下の CONFIG(script 内)を編集してください:
+  - GAS_ENDPOINT : リード保存用 Google Apps Script のURL
+  - CTA_URL      : 診断結果画面のボタン遷移先(インターン応募フォーム等)
+  - COMPANY_NAME : 運営会社名(フッター・プライバシー表記に反映)
+========================================== -->
+
+<!-- ========== スタート画面 ========== -->
+<section id="screen-start">
+  <div class="hero">
+    <div class="wrap">
+      <div class="badge">就活力シミュレーション診断</div>
+      <h1>あなたの志望企業、<br>内定率は<span class="pct">何%</span>?</h1>
+      <p class="lead">10の質問に答えるだけで、いまの就活準備度から<br>志望企業への内定可能性をシミュレーション。</p>
+      <div class="meta">
+        <span>⏱ 所要30秒</span><span>💰 完全無料</span><span>📱 登録はメールだけ</span>
+      </div>
+    </div>
+  </div>
+  <div class="wrap">
+    <div class="card start-card">
+      <ul>
+        <li>志望業界・企業レベル × 準備度で内定率を算出</li>
+        <li>あなたの「弱点TOP3」と改善アクションがわかる</li>
+        <li>内定率を上げる長期インターン情報もお届け</li>
+      </ul>
+      <button class="btn btn-primary" id="btn-start">無料で診断をはじめる &nbsp;▶</button>
+      <p class="note">※ 本診断は就活準備度をもとにした<b>シミュレーション(目安)</b>であり、実際の選考結果を保証・予測するものではありません。</p>
+    </div>
+  </div>
+</section>
+
+<!-- ========== 質問画面 ========== -->
+<section id="screen-quiz" class="hidden">
+  <div class="wrap">
+    <div class="progress-row">
+      <span class="progress-label" id="progress-label">Q1 / 10</span>
+      <div class="progress-track"><div class="progress-fill" id="progress-fill"></div></div>
+    </div>
+    <div class="card">
+      <div class="q-title" id="q-title"></div>
+      <div id="q-options"></div>
+      <button class="btn btn-sub" id="btn-back">← 前の質問に戻る</button>
+    </div>
+  </div>
+</section>
+
+<!-- ========== リード獲得フォーム ========== -->
+<section id="screen-form" class="hidden">
+  <div class="wrap">
+    <div class="form-head">
+      <span class="done-badge">✓ 診断完了!</span>
+      <h2>結果の準備ができました</h2>
+      <p>下記を入力すると、その場で診断結果が表示されます。</p>
+    </div>
+    <div class="card">
+      <div class="form-error" id="form-error"></div>
+      <form id="lead-form" novalidate>
+        <div class="field">
+          <label for="f-name">お名前<span class="req">必須</span></label>
+          <input type="text" id="f-name" name="name" placeholder="例)山田 太郎" autocomplete="name" required>
+        </div>
+        <div class="field">
+          <label for="f-univ">大学名・学部<span class="req">必須</span></label>
+          <input type="text" id="f-univ" name="university" placeholder="例)○○大学 経済学部" required>
+        </div>
+        <div class="field">
+          <label for="f-grad">卒業予定年<span class="req">必須</span></label>
+          <select id="f-grad" name="gradYear" required>
+            <option value="">選択してください</option>
+            <option value="2027年卒">2027年卒</option>
+            <option value="2028年卒">2028年卒</option>
+            <option value="2029年卒">2029年卒</option>
+            <option value="2030年卒以降">2030年卒以降</option>
+            <option value="既卒・その他">既卒・その他</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="f-email">メールアドレス<span class="req">必須</span></label>
+          <input type="email" id="f-email" name="email" placeholder="例)taro@example.com" autocomplete="email" required>
+        </div>
+        <div class="field">
+          <label for="f-company">いちばん行きたい企業名<span class="optional">任意</span></label>
+          <input type="text" id="f-company" name="targetCompany" placeholder="例)△△商事(結果画面に反映されます)">
+        </div>
+        <div class="field">
+          <label for="f-tel">電話番号<span class="optional">任意</span></label>
+          <input type="tel" id="f-tel" name="phone" placeholder="例)090-1234-5678" autocomplete="tel">
+        </div>
+        <div class="hp-field" aria-hidden="true">
+          <label>この欄は入力しないでください<input type="text" id="f-website" name="website" tabindex="-1" autocomplete="off"></label>
+        </div>
+        <div class="consent">
+          <input type="checkbox" id="f-consent" required>
+          <label for="f-consent">
+            <a href="#privacy" target="_blank">個人情報の取り扱い</a>に同意します。入力いただいた情報は、診断結果の提供、インターンシップ・キャリアイベント等のご案内に利用します。
+          </label>
+        </div>
+        <button type="submit" class="btn btn-brand" id="btn-submit">診断結果を見る</button>
+      </form>
+      <p class="note">※ 営業目的の迷惑な連絡は行いません。配信はいつでも停止できます。</p>
+    </div>
+  </div>
+</section>
+
+<!-- ========== 結果画面 ========== -->
+<section id="screen-result" class="hidden">
+  <div class="wrap">
+    <div class="card gauge-wrap">
+      <div class="gauge-caption">あなたの内定率シミュレーション結果</div>
+      <div class="gauge-company" id="result-company"></div>
+      <div class="gauge">
+        <svg width="210" height="210" viewBox="0 0 210 210">
+          <circle cx="105" cy="105" r="92" fill="none" stroke="var(--track)" stroke-width="16"/>
+          <circle id="gauge-arc" cx="105" cy="105" r="92" fill="none" stroke="var(--brand)" stroke-width="16"
+                  stroke-linecap="round" stroke-dasharray="578" stroke-dashoffset="578"
+                  style="transition: stroke-dashoffset 1.2s cubic-bezier(.22,.8,.3,1);"/>
+        </svg>
+        <div class="num">
+          <div class="value"><span id="result-num">0</span><small>%</small></div>
+        </div>
+      </div>
+      <div class="tier-chip" id="tier-chip"></div>
+      <p class="result-comment" id="result-comment"></p>
+    </div>
+
+    <div class="card advice-card">
+      <h3>内定率を上げる、あなたの改善ポイント</h3>
+      <div id="advice-list"></div>
+    </div>
+
+    <div class="cta-card">
+      <h3 id="cta-title">内定率をいちばん上げる方法は、<br>「長期インターンの実務経験」です</h3>
+      <p>ガクチカ・スキル・面接での説得力。就活で問われるすべてが、実務経験で一気に手に入ります。まずは話を聞いてみませんか?</p>
+      <a class="btn btn-primary" id="cta-btn" href="#">長期インターンの詳細を見る &nbsp;▶</a>
+    </div>
+
+    <div class="share-row">
+      <a id="share-x" href="#" target="_blank" rel="noopener">結果をXでシェアする</a>
+    </div>
+
+    <p class="disclaimer">
+      ※ 本診断結果は、ご回答いただいた就活準備状況をもとに独自のロジックで算出したシミュレーション値であり、実際の選考の合否・確率を統計的に示すものではありません。エンターテインメントおよび自己分析の参考としてご利用ください。
+    </p>
+  </div>
+</section>
+
+<!-- ========== フッター(プライバシーポリシー) ========== -->
+<footer id="privacy">
+  <div class="wrap">
+    <h4>個人情報の取り扱いについて</h4>
+    <div class="privacy-box">
+      当診断サイト(運営:<span class="company-name">○○株式会社</span>)は、ご入力いただいた個人情報を以下の目的で利用します。<br>
+      (1) 診断結果の表示・提供 (2) インターンシップ・採用・キャリア支援イベント等のご案内(メール・お電話) (3) サービス改善のための統計分析(個人を特定しない形式)<br>
+      ご本人の同意なく第三者に提供することはありません。案内メールはいつでも配信停止できます。個人情報の開示・訂正・削除のご依頼は <span class="privacy-contact">info@example.com</span> までご連絡ください。
+    </div>
+    <p class="copy">© <span class="company-name">○○株式会社</span></p>
+  </div>
+</footer>
+
+<script>
+/* ============================================================
+   CONFIG — 公開前にここを編集
+============================================================ */
+const CONFIG = {
+  // Google Apps Script のウェブアプリURL(recruit-lp/gas/lead-collector.gs を参照)
+  GAS_ENDPOINT: "",
+  // 結果画面CTAの遷移先(長期インターンの応募フォーム・LINE登録・会社説明ページ等)
+  CTA_URL: "#",
+  // 運営会社名(フッターに反映)
+  COMPANY_NAME: "○○株式会社",
+  // 個人情報の問い合わせ先(フッターに反映)
+  PRIVACY_CONTACT: "info@example.com",
+};
+
+/* ============================================================
+   質問定義
+   type: "industry" / "company" は難易度係数、"prep" は準備度スコア
+============================================================ */
+const QUESTIONS = [
+  {
+    key: "grade", type: "info",
+    title: "Q1. いまの学年を教えてください",
+    options: [
+      { label: "大学1・2年生", value: "大学1・2年" },
+      { label: "大学3年生", value: "大学3年" },
+      { label: "大学4年生・修士1年生", value: "大学4年・修士1年" },
+      { label: "修士2年生・その他", value: "修士2年・その他" },
+    ],
+  },
+  {
+    key: "industry", type: "industry",
+    title: "Q2. 志望している業界は?",
+    options: [
+      { label: "コンサル・投資銀行・総合商社", value: "コンサル・金融・商社", coef: 0.55 },
+      { label: "広告・マスコミ・エンタメ", value: "広告・マスコミ", coef: 0.65 },
+      { label: "メーカー・金融・インフラ", value: "メーカー・金融・インフラ", coef: 0.80 },
+      { label: "IT・ベンチャー / まだ決めていない", value: "IT・ベンチャー・未定", coef: 0.85 },
+    ],
+  },
+  {
+    key: "companyLevel", type: "company",
+    title: "Q3. 志望企業のレベル感は?",
+    options: [
+      { label: "誰もが知っている超人気企業", value: "超人気企業", coef: 0.60 },
+      { label: "業界内では有名な大手企業", value: "業界大手", coef: 0.75 },
+      { label: "中堅・優良企業", value: "中堅・優良", coef: 0.90 },
+      { label: "ベンチャー・スタートアップ", value: "ベンチャー", coef: 0.95 },
+    ],
+  },
+  {
+    key: "selfAnalysis", type: "prep", weak: "自己分析",
+    title: "Q4. 自己分析はどこまで進んでいますか?",
+    options: [
+      { label: "強み・軸を言語化できている", value: "言語化済み", score: 3 },
+      { label: "ある程度は整理できている", value: "ある程度", score: 2 },
+      { label: "着手したばかり", value: "着手したばかり", score: 1 },
+      { label: "まだ何もしていない", value: "未着手", score: 0 },
+    ],
+  },
+  {
+    key: "gakuchika", type: "prep", weak: "ガクチカ",
+    title: "Q5. 「ガクチカ」として話せる経験はありますか?",
+    options: [
+      { label: "数字や成果つきで複数語れる", value: "複数・成果あり", score: 3 },
+      { label: "1つは自信を持って語れる", value: "1つある", score: 2 },
+      { label: "エピソードはあるが自信がない", value: "自信なし", score: 1 },
+      { label: "正直、思いつかない", value: "なし", score: 0 },
+    ],
+  },
+  {
+    key: "internship", type: "prep", weak: "実務経験",
+    title: "Q6. インターンシップの経験は?",
+    options: [
+      { label: "長期インターン経験あり(1ヶ月以上)", value: "長期あり", score: 3 },
+      { label: "短期インターンに複数参加", value: "短期複数", score: 2 },
+      { label: "1dayイベントのみ参加", value: "1dayのみ", score: 1 },
+      { label: "まだ参加したことがない", value: "なし", score: 0 },
+    ],
+  },
+  {
+    key: "es", type: "prep", weak: "ES・書類",
+    title: "Q7. エントリーシート(ES)を書いた経験は?",
+    options: [
+      { label: "何度も書いて添削も受けた", value: "添削済み", score: 3 },
+      { label: "数回書いたことがある", value: "数回", score: 2 },
+      { label: "1回だけ書いたことがある", value: "1回", score: 1 },
+      { label: "書いたことがない", value: "未経験", score: 0 },
+    ],
+  },
+  {
+    key: "interview", type: "prep", weak: "面接",
+    title: "Q8. 面接(模擬面接含む)の経験は?",
+    options: [
+      { label: "本選考・模擬面接ともに複数回", value: "複数回", score: 3 },
+      { label: "数回は経験がある", value: "数回", score: 2 },
+      { label: "1回だけある", value: "1回", score: 1 },
+      { label: "経験がない", value: "未経験", score: 0 },
+    ],
+  },
+  {
+    key: "research", type: "prep", weak: "企業研究・OB訪問",
+    title: "Q9. 企業研究・OB/OG訪問はしていますか?",
+    options: [
+      { label: "OB/OG訪問を5人以上している", value: "5人以上", score: 3 },
+      { label: "数人に話を聞いた", value: "数人", score: 2 },
+      { label: "ネットで調べた程度", value: "調べただけ", score: 1 },
+      { label: "これからやる予定", value: "未着手", score: 0 },
+    ],
+  },
+  {
+    key: "action", type: "prep", weak: "行動量",
+    title: "Q10. 就活・キャリアのための行動頻度は?",
+    options: [
+      { label: "ほぼ毎日なにか行動している", value: "毎日", score: 3 },
+      { label: "週に数回は動いている", value: "週数回", score: 2 },
+      { label: "ときどき思い出したように", value: "たまに", score: 1 },
+      { label: "ほぼゼロ", value: "ほぼゼロ", score: 0 },
+    ],
+  },
+];
+
+/* 弱点カテゴリ別の改善アドバイス */
+const ADVICE = {
+  "自己分析": {
+    title: "自己分析:「強みの言語化」が最初の壁",
+    body: "面接官が知りたいのは経歴ではなく「再現性のある強み」。モチベーショングラフと他己分析から始めると、1〜2週間で軸が見えてきます。",
+  },
+  "ガクチカ": {
+    title: "ガクチカ:実績は「これから作る」が正解",
+    body: "ガクチカは過去を探すより、いま作るほうが早い。長期インターンでの実務成果は、数字で語れる最強のエピソードになります。",
+  },
+  "実務経験": {
+    title: "実務経験:内定率をいちばん動かす変数",
+    body: "採用担当が最も評価するのが実務経験。長期インターンを経験した学生は、ES通過率・面接評価ともに大きく伸びる傾向があります。",
+  },
+  "ES・書類": {
+    title: "ES:添削1回で見違える",
+    body: "ESは「書く→添削→書き直す」のサイクルが命。第三者のフィードバックを一度も受けていないESは、実力の半分も伝わっていません。",
+  },
+  "面接": {
+    title: "面接:場数がそのまま評価になる",
+    body: "面接力は知識ではなく筋肉。模擬面接やインターン選考で場数を踏むほど、本命企業の面接で緊張せずに話せるようになります。",
+  },
+  "企業研究・OB訪問": {
+    title: "企業研究:「働く人の生の声」で差がつく",
+    body: "志望動機の説得力は情報の一次性で決まります。社員やインターン生から直接聞いた話は、面接での言葉の重みが違います。",
+  },
+  "行動量": {
+    title: "行動量:早く動いた人から内定していく",
+    body: "就活は情報戦かつ先行者有利。低学年からの行動は、それだけで大きなアドバンテージです。今日の一歩が半年後の差になります。",
+  },
+};
+
+/* 結果ティア(チップの色はステータス用途・ラベル併記) */
+const TIERS = [
+  { min: 70, label: "A:内定圏内", bg: "#ecfdf5", fg: "#047857",
+    comment: "現時点でかなり高い水準です。あとは志望企業に合わせた面接対策と、他の就活生と差をつける「実務経験の裏付け」で確実に決めきりましょう。" },
+  { min: 50, label: "B:あと一歩", bg: "#eff6ff", fg: "#1d4ed8",
+    comment: "基礎はできています。ただ、人気企業の選考では「準備した学生」同士の勝負に。弱点を1つずつ潰せば、内定圏内は十分に狙えます。" },
+  { min: 30, label: "C:伸びしろ大", bg: "#fffbeb", fg: "#b45309",
+    comment: "いまはまだ準備不足ですが、裏を返せば伸びしろだらけ。ここから3ヶ月の動き方で、内定率は大きく変わります。" },
+  { min: 0, label: "D:今が始めどき", bg: "#fef2f2", fg: "#b91c1c",
+    comment: "スタートラインに立ったばかり。でも大丈夫、就活は「早く気づいて動いた人」が勝つゲームです。このページに辿り着いた今日が始めどきです。" },
+];
+
+/* ============================================================
+   画面制御
+============================================================ */
+const state = { current: 0, answers: [], score: null, weakest: [] };
+
+const $ = (id) => document.getElementById(id);
+const screens = ["screen-start", "screen-quiz", "screen-form", "screen-result"];
+function show(id) {
+  screens.forEach((s) => $(s).classList.toggle("hidden", s !== id));
+  window.scrollTo({ top: 0, behavior: "instant" });
+}
+
+/* --- 質問描画 --- */
+function renderQuestion() {
+  const q = QUESTIONS[state.current];
+  $("progress-label").textContent = `Q${state.current + 1} / ${QUESTIONS.length}`;
+  $("progress-fill").style.width = `${(state.current / QUESTIONS.length) * 100}%`;
+  $("q-title").textContent = q.title;
+  $("btn-back").style.visibility = state.current === 0 ? "hidden" : "visible";
+
+  const box = $("q-options");
+  box.innerHTML = "";
+  q.options.forEach((opt, i) => {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.className = "opt";
+    b.textContent = opt.label;
+    if (state.answers[state.current] === i) b.classList.add("selected");
+    b.addEventListener("click", () => {
+      state.answers[state.current] = i;
+      b.classList.add("selected");
+      setTimeout(() => {
+        if (state.current < QUESTIONS.length - 1) {
+          state.current++;
+          renderQuestion();
+        } else {
+          computeScore();
+          show("screen-form");
+        }
+      }, 180);
+    });
+    box.appendChild(b);
+  });
+}
+
+/* --- スコア計算 --- */
+function computeScore() {
+  let prep = 0, prepMax = 0, coef = 1;
+  const weakness = [];
+  QUESTIONS.forEach((q, qi) => {
+    const opt = q.options[state.answers[qi]];
+    if (q.type === "prep") {
+      prep += opt.score;
+      prepMax += 3;
+      weakness.push({ cat: q.weak, score: opt.score });
+    } else if (q.type === "industry" || q.type === "company") {
+      coef *= opt.coef;
+    }
+  });
+  const ratio = prep / prepMax;
+  const raw = (25 + 75 * ratio) * coef;
+  state.score = Math.max(5, Math.min(92, Math.round(raw)));
+  state.weakest = weakness.sort((a, b) => a.score - b.score).slice(0, 3).map((w) => w.cat);
+}
+
+/* --- リード送信 --- */
+function collectLead() {
+  const answersDetail = {};
+  QUESTIONS.forEach((q, qi) => {
+    answersDetail[q.key] = q.options[state.answers[qi]].value;
+  });
+  return {
+    submittedAt: new Date().toISOString(),
+    name: $("f-name").value.trim(),
+    university: $("f-univ").value.trim(),
+    gradYear: $("f-grad").value,
+    email: $("f-email").value.trim(),
+    targetCompany: $("f-company").value.trim(),
+    phone: $("f-tel").value.trim(),
+    score: state.score,
+    weakest: state.weakest.join(" / "),
+    answers: answersDetail,
+    page: location.href,
+    referrer: document.referrer || "",
+  };
+}
+
+async function sendLead(lead) {
+  if (!CONFIG.GAS_ENDPOINT) {
+    console.warn("[recruit-lp] CONFIG.GAS_ENDPOINT が未設定のため、リードは送信されていません。", lead);
+    return;
+  }
+  try {
+    // text/plain にすることで CORS プリフライトを回避(GAS 側で JSON.parse する)
+    await fetch(CONFIG.GAS_ENDPOINT, {
+      method: "POST",
+      headers: { "Content-Type": "text/plain;charset=utf-8" },
+      body: JSON.stringify(lead),
+    });
+  } catch (err) {
+    // 送信失敗でも診断体験は止めない。ローカルに退避しておく
+    console.error("[recruit-lp] リード送信に失敗:", err);
+    try {
+      const pool = JSON.parse(localStorage.getItem("pendingLeads") || "[]");
+      pool.push(lead);
+      localStorage.setItem("pendingLeads", JSON.stringify(pool));
+    } catch (_) { /* no-op */ }
+  }
+}
+
+/* --- フォーム制御 --- */
+$("lead-form").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const err = $("form-error");
+  err.style.display = "none";
+
+  if ($("f-website").value) return; // honeypot: bot は無視
+
+  const missing = [];
+  if (!$("f-name").value.trim()) missing.push("お名前");
+  if (!$("f-univ").value.trim()) missing.push("大学名・学部");
+  if (!$("f-grad").value) missing.push("卒業予定年");
+  const email = $("f-email").value.trim();
+  if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) missing.push("メールアドレス(形式)");
+  if (!$("f-consent").checked) missing.push("個人情報の取り扱いへの同意");
+
+  if (missing.length) {
+    err.textContent = `未入力・不備があります:${missing.join("、")}`;
+    err.style.display = "block";
+    return;
+  }
+
+  const btn = $("btn-submit");
+  btn.disabled = true;
+  btn.textContent = "結果を計算中…";
+  await sendLead(collectLead());
+  renderResult();
+  show("screen-result");
+  btn.disabled = false;
+  btn.textContent = "診断結果を見る";
+});
+
+/* --- 結果描画 --- */
+function renderResult() {
+  const score = state.score;
+  const company = $("f-company").value.trim();
+  $("result-company").textContent = company ? `▶ ${company}` : "▶ あなたの第一志望企業";
+
+  const tier = TIERS.find((t) => score >= t.min);
+  const chip = $("tier-chip");
+  chip.textContent = `判定 ${tier.label}`;
+  chip.style.background = tier.bg;
+  chip.style.color = tier.fg;
+  $("result-comment").textContent = tier.comment;
+
+  // ゲージ + カウントアップ
+  const CIRC = 2 * Math.PI * 92;
+  const arc = $("gauge-arc");
+  arc.setAttribute("stroke-dasharray", CIRC);
+  arc.style.strokeDashoffset = CIRC;
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+      arc.style.strokeDashoffset = CIRC * (1 - score / 100);
+    });
+  });
+  const numEl = $("result-num");
+  const start = performance.now();
+  (function tick(now) {
+    const p = Math.min((now - start) / 1200, 1);
+    numEl.textContent = Math.round(score * (1 - Math.pow(1 - p, 3)));
+    if (p < 1) requestAnimationFrame(tick);
+  })(start);
+
+  // 弱点アドバイス
+  const list = $("advice-list");
+  list.innerHTML = "";
+  state.weakest.forEach((cat) => {
+    const a = ADVICE[cat];
+    const div = document.createElement("div");
+    div.className = "advice-item";
+    div.innerHTML = `<div class="a-title">${a.title}</div><div class="a-body">${a.body}</div>`;
+    list.appendChild(div);
+  });
+
+  // CTA・シェア
+  $("cta-btn").href = CONFIG.CTA_URL;
+  const shareText = `就活力診断をやってみた結果、志望企業への内定率は【${score}%】(判定 ${tier.label})でした!\n#内定率診断`;
+  $("share-x").href =
+    "https://twitter.com/intent/tweet?text=" + encodeURIComponent(shareText) +
+    "&url=" + encodeURIComponent(location.origin + location.pathname);
+}
+
+/* --- 初期化 --- */
+$("btn-start").addEventListener("click", () => {
+  state.current = 0;
+  renderQuestion();
+  show("screen-quiz");
+});
+$("btn-back").addEventListener("click", () => {
+  if (state.current > 0) {
+    state.current--;
+    renderQuestion();
+  }
+});
+document.querySelectorAll(".company-name").forEach((el) => (el.textContent = CONFIG.COMPANY_NAME));
+document.querySelector(".privacy-contact").textContent = CONFIG.PRIVACY_CONTACT;
+</script>
+</body>
+</html>
